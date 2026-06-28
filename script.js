@@ -40,6 +40,24 @@
     });
   }
 
+  /* ----------- TIER TRACKING ----------- */
+  // Quando o usuário clica em "Quero o FULL / LIGHT / PRO", marca o tier no form
+  const tierField = document.getElementById('tierField');
+  document.querySelectorAll('[data-tier]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const tier = link.getAttribute('data-tier');
+      if (tierField) tierField.value = tier;
+      // Persist choice no localStorage (útil se voltar depois)
+      try { localStorage.setItem('impulso_selected_tier', tier); } catch (_) {}
+    });
+  });
+
+  // Restore tier from previous visit
+  try {
+    const saved = localStorage.getItem('impulso_selected_tier');
+    if (saved && tierField) tierField.value = saved;
+  } catch (_) {}
+
   /* ----------- FORM SUBMIT ----------- */
   const form = document.getElementById('leadForm');
   const successBox = document.getElementById('formSuccess');
@@ -66,23 +84,31 @@
       setTimeout(() => {
         successBox.classList.add('is-visible');
         form.reset();
-        btn.innerHTML = '✓ Recebido!';
+        btn.innerHTML = '✓ Recebido! Em breve te chamamos';
         btn.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
         btn.style.opacity = '1';
 
         // Payload pronto pra integrar
         const payload = {
           ...data,
+          page_version: document.body.dataset.page || 'full',
           source: 'landing-impulso-ia',
           ts: new Date().toISOString(),
         };
         console.log('[LEAD]', payload);
 
+        // Exemplo de integração real — descomentar e configurar:
+        // await fetch('https://webhook.seudominio.com/leads', {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(payload),
+        // });
+
         setTimeout(() => {
           btn.disabled = false;
           btn.innerHTML = originalHTML;
           btn.style.background = '';
-        }, 4000);
+        }, 5000);
       }, 900);
     });
   }
