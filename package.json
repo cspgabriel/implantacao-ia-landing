@@ -1,0 +1,22 @@
+{
+  "name": "implantacao-ia-landing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page premium para serviço de Implantação de IA em Pequenos Negócios",
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "start": "npx serve . -l 3000",
+    "build": "echo 'Site estático — sem build step' && exit 0"
+  },
+  "keywords": [
+    "landing-page",
+    "ia",
+    "implantacao-ia",
+    "pequenos-negocios",
+    "automacao",
+    "hormozi",
+    "conversao"
+  ],
+  "author": "Impulso.IA",
+  "license": "MIT"
+}
