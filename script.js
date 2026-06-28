@@ -63,7 +63,7 @@
   const successBox = document.getElementById('formSuccess');
 
   if (form && successBox) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const data = Object.fromEntries(new FormData(form).entries());
@@ -80,36 +80,46 @@
       btn.innerHTML = 'Enviando…';
       btn.style.opacity = '0.7';
 
-      // Simulação de envio (substituir por integração real: webhook, Brevo, n8n, etc.)
-      setTimeout(() => {
+      const payload = {
+        ...data,
+        page_version: document.body.dataset.page || document.body.dataset.theme || 'full',
+        source: 'landing-impulso-ia',
+        ts: new Date().toISOString(),
+      };
+
+      try {
+        const res = await fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+
+        if (!res.ok || !result.ok) {
+          throw new Error(result.message || result.error || `HTTP ${res.status}`);
+        }
+
         successBox.classList.add('is-visible');
         form.reset();
-        btn.innerHTML = '✓ Recebido! Em breve te chamamos';
+        btn.innerHTML = result.emailSent
+          ? '✓ Recebido! Confere seu e-mail ✉️'
+          : '✓ Recebido! Em breve te chamamos';
         btn.style.background = 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
         btn.style.opacity = '1';
 
-        // Payload pronto pra integrar
-        const payload = {
-          ...data,
-          page_version: document.body.dataset.page || 'full',
-          source: 'landing-impulso-ia',
-          ts: new Date().toISOString(),
-        };
-        console.log('[LEAD]', payload);
+        console.log('[LEAD OK]', result);
+      } catch (err) {
+        console.error('[LEAD FAIL]', err);
+        btn.innerHTML = '⚠️ Erro ao enviar — tente de novo';
+        btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        btn.style.opacity = '1';
+      }
 
-        // Exemplo de integração real — descomentar e configurar:
-        // await fetch('https://webhook.seudominio.com/leads', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(payload),
-        // });
-
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.innerHTML = originalHTML;
-          btn.style.background = '';
-        }, 5000);
-      }, 900);
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        btn.style.background = '';
+      }, 6000);
     });
   }
 

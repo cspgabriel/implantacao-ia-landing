@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07070b" />
+  <title>Conteúdo do curso — Portal Impulso.IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style-portal.css" />
+</head>
+<body>
+  <div class="portal" id="portalSidebar">
+    <main class="main">
+      <header class="main__header">
+        <div>
+          <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">☰</button>
+          <h1 class="main__title">📚 Conteúdo do curso</h1>
+          <p class="main__subtitle" id="courseSub"></p>
+        </div>
+      </header>
+
+      <!-- Módulos principais -->
+      <section class="stack--lg" id="modulesSection">
+        <div id="modulesContainer"></div>
+      </section>
+
+      <!-- Bônus -->
+      <section class="stack--lg" style="margin-top: 48px;">
+        <div class="row" style="gap: 12px;">
+          <span style="font-size:24px;">🎁</span>
+          <h2 style="font-size:20px; font-weight:700;">Aulas bônus</h2>
+        </div>
+        <p class="muted" style="font-size: 14px; margin-top: -16px;">Casos reais de clientes que implantaram IA. 90 minutos de pura aplicação prática.</p>
+        <div class="card-grid" id="bonusContainer"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="course-data.js"></script>
+  <script src="portal-helpers.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const aluno = window.AlunoStorage.getOrCreate();
+      const course = window.COURSE_DATA;
+
+      document.getElementById('courseSub').textContent =
+        `${course.meta.subtitle} · ${course.modules.flatMap(m=>m.lessons).length + course.bonus.length} aulas no total`;
+
+      // Módulos
+      document.getElementById('modulesContainer').innerHTML = course.modules.map((m) => {
+        const modPct = window.AlunoStorage.calcModuleProgress(m, aluno);
+        const status = modPct === 100 ? 'done' : modPct > 0 ? 'progress' : 'new';
+        const statusLabel = modPct === 100 ? '✓ Concluído' : modPct > 0 ? `${modPct}% feito` : 'Não iniciado';
+
+        const lessonsHTML = m.lessons.map((l, i) => `
+          <a href="modulo.html?id=${l.id}" class="lesson ${aluno.progress[l.id] ? 'is-done' : ''}">
+            <div class="lesson__check">${aluno.progress[l.id] ? '✓' : ''}</div>
+            <div class="lesson__num">${m.num}.${i + 1}</div>
+            <div class="lesson__title">${l.title}</div>
+            <div class="lesson__duration">⏱️ ${l.duration}</div>
+          </a>
+        `).join('');
+
+        const materialsHTML = m.materials.map((mat) => `
+          <div class="row" style="padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 8px; font-size: 13px;">
+            <span style="font-family: var(--font-mono, monospace); font-size: 10px; padding: 2px 6px; background: rgba(124,92,255,0.15); border-radius: 4px; color: var(--accent); font-weight: 700;">${mat.type}</span>
+            <span class="muted">${mat.name}</span>
+          </div>
+        `).join('');
+
+        return `
+          <article class="module-card">
+            <div class="module-card__head">
+              <div class="module-card__num">${m.num}</div>
+              <div style="flex:1;">
+                <div class="module-card__title">${m.title}</div>
+                <div class="module-card__meta">${m.days} · ${m.duration} · ${m.lessons.length} aulas · ${m.materials.length} materiais</div>
+              </div>
+              <span class="module-card__status module-card__status--${status}">${statusLabel}</span>
+            </div>
+            <div class="module-card__body">
+              <p class="muted" style="font-size: 15px; margin-bottom: 16px;">${m.subtitle}</p>
+              <div class="progress" style="margin-bottom: 20px;">
+                <div class="progress__bar" style="width: ${modPct}%;"></div>
+              </div>
+
+              <h4 style="font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Aulas</h4>
+              <div class="lesson-list" style="margin-bottom: 24px;">${lessonsHTML}</div>
+
+              ${m.materials.length > 0 ? `
+                <h4 style="font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Materiais</h4>
+                <div class="stack" style="gap: 6px;">${materialsHTML}</div>
+              ` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Bônus
+      document.getElementById('bonusContainer').innerHTML = course.bonus.map((b) => `
+        <a href="modulo.html?id=${b.id}" class="module-card module-card--bonus">
+          <div class="module-card__head">
+            <div class="module-card__num">★</div>
+            <div style="flex:1;">
+              <div class="module-card__title">${b.title}</div>
+              <div class="module-card__meta">⏱️ ${b.duration} ${aluno.progress[b.id] ? '· ✓ assistido' : ''}</div>
+            </div>
+          </div>
+          <div class="module-card__body">
+            <p class="muted" style="font-size: 14px;">${b.desc}</p>
+          </div>
+          <div class="module-card__foot">
+            <span class="muted" style="font-size: 13px;">Assistir aula →</span>
+          </div>
+        </a>
+      `).join('');
+
+      if (typeof renderSidebar === 'function') renderSidebar('curso');
+    })();
+  </script>
+</body>
+</html>

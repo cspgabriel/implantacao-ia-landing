@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07070b" />
+  <title>Login — Portal Impulso.IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style-portal.css" />
+</head>
+<body>
+  <main class="auth">
+    <div class="auth__card">
+      <a href="../index.html" class="auth__brand">
+        <span class="logo__dot"></span>
+        <span>Impulso<span style="background:var(--grad-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">.IA</span></span>
+      </a>
+
+      <h1 class="auth__title" id="authTitle">Acessar o portal</h1>
+      <p class="auth__sub" id="authSub">Entre com seu e-mail e senha</p>
+
+      <div class="auth__error" id="authError">Erro ao autenticar.</div>
+
+      <form id="authForm">
+        <div class="auth__field" id="nameField" style="display:none">
+          <label for="nome">Seu nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Como podemos te chamar?" />
+        </div>
+
+        <div class="auth__field">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="voce@empresa.com.br" required />
+        </div>
+
+        <div class="auth__field">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" placeholder="••••••••" required minlength="4" />
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block btn--lg" id="authSubmit">
+          Entrar
+        </button>
+      </form>
+
+      <p class="auth__toggle">
+        <span id="toggleText">Ainda não tem acesso?</span>
+        <a id="toggleMode">Cadastre-se</a>
+      </p>
+
+      <div class="auth__demo">
+        <strong>🎓 Demo:</strong> use qualquer e-mail/senha pra entrar. <br>
+        Os dados ficam no seu navegador (localStorage).
+      </div>
+
+      <p style="text-align:center; margin-top: 18px;">
+        <a href="../index.html" style="font-size:13px; color: var(--text-2);">← Voltar ao site</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="course-data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      let mode = 'login'; // ou 'cadastro'
+      const title = document.getElementById('authTitle');
+      const sub = document.getElementById('authSub');
+      const submit = document.getElementById('authSubmit');
+      const toggleText = document.getElementById('toggleText');
+      const toggleMode = document.getElementById('toggleMode');
+      const nameField = document.getElementById('nameField');
+      const errBox = document.getElementById('authError');
+      const form = document.getElementById('authForm');
+
+      function setMode(m) {
+        mode = m;
+        if (mode === 'login') {
+          title.textContent = 'Acessar o portal';
+          sub.textContent = 'Entre com seu e-mail e senha';
+          submit.textContent = 'Entrar';
+          toggleText.textContent = 'Ainda não tem acesso?';
+          toggleMode.textContent = 'Cadastre-se';
+          nameField.style.display = 'none';
+          document.getElementById('nome').required = false;
+        } else {
+          title.textContent = 'Criar conta no portal';
+          sub.textContent = 'Acesso vitalício ao curso + materiais';
+          submit.textContent = 'Criar conta e entrar';
+          toggleText.textContent = 'Já tem conta?';
+          toggleMode.textContent = 'Entrar';
+          nameField.style.display = 'block';
+          document.getElementById('nome').required = true;
+        }
+      }
+      setMode('login');
+      toggleMode.addEventListener('click', () => setMode(mode === 'login' ? 'cadastro' : 'login'));
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        errBox.classList.remove('is-visible');
+        const email = document.getElementById('email').value.trim();
+        const senha = document.getElementById('senha').value;
+        const nome = document.getElementById('nome')?.value.trim() || email.split('@')[0];
+
+        if (!email || !senha || senha.length < 4) {
+          errBox.textContent = 'Preencha e-mail e senha (mínimo 4 caracteres).';
+          errBox.classList.add('is-visible');
+          return;
+        }
+
+        // === DEMO: client-side auth via localStorage ===
+        // Em produção: trocar por chamada real a /api/auth (Supabase, NextAuth, etc.)
+        const aluno = {
+          id: 'aluno-' + email.split('@')[0],
+          nome,
+          email,
+          plano: 'full',
+          progress: window.AlunoStorage.load()?.progress || {},
+          startedAt: window.AlunoStorage.load()?.startedAt || new Date().toISOString(),
+        };
+        window.AlunoStorage.save(aluno);
+
+        // Redireciona pro dashboard
+        window.location.href = 'dashboard.html';
+      });
+
+      // Se já tá logado, joga pro dashboard
+      if (window.AlunoStorage.load()) {
+        window.location.href = 'dashboard.html';
+      }
+    })();
+  </script>
+</body>
+</html>

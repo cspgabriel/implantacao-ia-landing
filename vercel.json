@@ -2,6 +2,9 @@
   "outputDirectory": ".",
   "buildCommand": null,
   "cleanUrls": true,
+  "rewrites": [
+    { "source": "/portal", "destination": "/portal/login.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

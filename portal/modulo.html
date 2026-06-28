@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07070b" />
+  <title>Aula — Portal Impulso.IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style-portal.css" />
+</head>
+<body>
+  <div class="portal" id="portalSidebar">
+    <main class="main">
+      <header class="main__header">
+        <div>
+          <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">☰</button>
+          <a href="curso.html" class="muted" style="font-size:14px;">← Voltar ao curso</a>
+          <h1 class="main__title" id="lessonTitle" style="margin-top:8px;">Aula</h1>
+          <p class="main__subtitle" id="lessonSubtitle"></p>
+        </div>
+        <div class="row" style="gap: 8px;">
+          <a href="#" id="prevBtn" class="btn btn--ghost">← Anterior</a>
+          <a href="#" id="nextBtn" class="btn btn--primary">Próxima →</a>
+        </div>
+      </header>
+
+      <!-- Vídeo -->
+      <div class="video" id="videoContainer">
+        <div class="video__placeholder">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <polygon points="10 8 16 12 10 16" fill="currentColor"/>
+          </svg>
+          <div>Player de vídeo</div>
+          <small>Substitua o ID do YouTube no <code>course-data.js</code></small>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="row row--between" style="margin-bottom: 32px; flex-wrap: wrap; gap: 12px;">
+        <button id="toggleDoneBtn" class="btn btn--ghost">
+          ✓ Marcar como concluída
+        </button>
+        <div class="row" style="gap: 8px;">
+          <span class="muted" style="font-size: 13px;">📥 Materiais:</span>
+          <div id="materialsRow" class="row" style="gap: 8px; flex-wrap: wrap;"></div>
+        </div>
+      </div>
+
+      <!-- Descrição / Notas -->
+      <section class="card" style="margin-bottom: 32px;">
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">📝 Sobre esta aula</h3>
+        <p class="muted" id="lessonDescription" style="line-height: 1.7;">Carregando…</p>
+      </section>
+
+      <!-- Próximas aulas do módulo -->
+      <section class="stack--lg">
+        <h3 style="font-size: 18px; font-weight: 700;">Aulas do módulo</h3>
+        <div id="siblingsList" class="lesson-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="course-data.js"></script>
+  <script src="portal-helpers.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      const aluno = window.AlunoStorage.getOrCreate();
+      const course = window.COURSE_DATA;
+
+      // Pegar ID da URL
+      const params = new URLSearchParams(window.location.search);
+      const lessonId = params.get('id') || 'm1-a1';
+
+      // Localizar a aula
+      let lesson = null, module = null, isBonus = false;
+      for (const m of course.modules) {
+        const found = m.lessons.find((l) => l.id === lessonId);
+        if (found) { lesson = found; module = m; break; }
+      }
+      if (!lesson) {
+        const found = course.bonus.find((b) => b.id === lessonId);
+        if (found) { lesson = found; isBonus = true; }
+      }
+      if (!lesson) {
+        document.querySelector('main').innerHTML = '<div class="empty"><div class="empty__icon">🔍</div><p>Aula não encontrada.</p><a href="curso.html" class="btn btn--ghost" style="margin-top:16px;">Ver curso completo</a></div>';
+        return;
+      }
+
+      // Header
+      document.title = `${lesson.title} — Portal Impulso.IA`;
+      document.getElementById('lessonTitle').textContent = lesson.title;
+      document.getElementById('lessonSubtitle').textContent = isBonus
+        ? `🎁 Bônus · ${lesson.duration}`
+        : `${module.num} · ${module.title} · ${lesson.duration}`;
+
+      // Vídeo
+      if (lesson.video) {
+        document.getElementById('videoContainer').innerHTML = `<iframe src="${lesson.video}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      }
+
+      // Descrição contextual
+      const descEl = document.getElementById('lessonDescription');
+      if (isBonus) {
+        descEl.textContent = lesson.desc || 'Aula bônus com caso real de aplicação de IA em negócio.';
+      } else {
+        descEl.innerHTML = `
+          Aula do módulo <strong>${module.title}</strong> · ${module.subtitle}.
+          <br><br>
+          <strong>O que você vai aprender:</strong>
+          <ul style="margin-top: 12px; padding-left: 20px; color: var(--text-1);">
+            <li>Conceito central e por que importa pro seu negócio</li>
+            <li>Exemplos práticos com aplicação imediata</li>
+            <li>Erros comuns e como evitá-los</li>
+            <li>Próximo passo depois da aula</li>
+          </ul>
+          <br>
+          <strong>Duração:</strong> ${lesson.duration} ·
+          <strong>Material de apoio:</strong> ${module.materials?.length || 0} arquivo(s)
+        `;
+      }
+
+      // Materiais
+      const materialsRow = document.getElementById('materialsRow');
+      if (!isBonus && module.materials?.length) {
+        materialsRow.innerHTML = module.materials.map((m) => `
+          <a href="#" class="btn btn--ghost btn--sm" title="${m.name}">📄 ${m.type}</a>
+        `).join('');
+      } else {
+        materialsRow.innerHTML = '<span class="muted" style="font-size:13px;">Sem materiais extras nesta aula</span>';
+      }
+
+      // Navegação prev/next
+      const allIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id))
+        .concat(course.bonus.map((b) => b.id));
+      const currentIdx = allIds.indexOf(lessonId);
+      const prevId = allIds[currentIdx - 1];
+      const nextId = allIds[currentIdx + 1];
+
+      document.getElementById('prevBtn').href = prevId ? `modulo.html?id=${prevId}` : 'curso.html';
+      document.getElementById('prevBtn').style.opacity = prevId ? '1' : '0.4';
+      document.getElementById('prevBtn').style.pointerEvents = prevId ? 'auto' : 'none';
+
+      document.getElementById('nextBtn').href = nextId ? `modulo.html?id=${nextId}` : 'dashboard.html';
+      document.getElementById('nextBtn').textContent = nextId ? 'Próxima →' : '✓ Voltar ao dashboard';
+
+      // Toggle concluída
+      const toggleBtn = document.getElementById('toggleDoneBtn');
+      function refreshToggleBtn() {
+        const done = window.AlunoStorage.isDone(lessonId);
+        toggleBtn.innerHTML = done ? '✓ Concluída — desmarcar' : '✓ Marcar como concluída';
+        toggleBtn.style.background = done ? 'rgba(74, 222, 128, 0.15)' : '';
+        toggleBtn.style.color = done ? 'var(--green)' : '';
+        toggleBtn.style.borderColor = done ? 'var(--green)' : '';
+      }
+      refreshToggleBtn();
+      toggleBtn.addEventListener('click', () => {
+        window.AlunoStorage.toggle(lessonId);
+        refreshToggleBtn();
+      });
+
+      // Irmãos (outras aulas do módulo)
+      const siblingsList = document.getElementById('siblingsList');
+      if (!isBonus) {
+        siblingsList.innerHTML = module.lessons.map((l, i) => `
+          <a href="modulo.html?id=${l.id}" class="lesson ${aluno.progress[l.id] ? 'is-done' : ''} ${l.id === lessonId ? 'is-active' : ''}">
+            <div class="lesson__check">${aluno.progress[l.id] ? '✓' : ''}</div>
+            <div class="lesson__num">${module.num}.${i + 1}</div>
+            <div class="lesson__title">${l.title}</div>
+            <div class="lesson__duration">⏱️ ${l.duration}</div>
+          </a>
+        `).join('');
+      } else {
+        siblingsList.innerHTML = '<p class="muted">Aula bônus independente.</p>';
+      }
+
+      if (typeof renderSidebar === 'function') renderSidebar('modulo');
+    })();
+  </script>
+</body>
+</html>
