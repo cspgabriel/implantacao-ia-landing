@@ -115,12 +115,19 @@ module.exports = async function handler(req, res) {
   const listId = parseInt(process.env.BREVO_LIST_ID || '0', 10);
 
   // 1. Cria / atualiza contato
+  // ⚠️ Brevo valida atributos "WHATSAPP" como número E.164 — se a string tiver
+  //    caracteres não-numéricos ou faltar o código do país, retorna 400.
+  //    Solução: passar apenas o E.164 puro (55 + DDD + número) num campo
+  //    dedicado, sem conflitar com o atributo nativo "WHATSAPP".
+  const e164 = phone.startsWith('55') ? phone : `55${phone}`;
+
   const contactPayload = {
     email: data.email,
     attributes: {
       NOME: data.nome,
-      WHATSAPP: data.whatsapp,
-      WHATSAPP_E164: phone,
+      SMS: e164,                  // Brevo aceita SMS como nº puro (E.164)
+      WHATSAPP_E164: e164,        // atributo custom pra guardar no contato
+      WHATSAPP_RAW: data.whatsapp || '',
       SEGMENTO: data.segmento,
       TAMANHO: data.tamanho || '',
       DESAFIO: data.desafio || '',
